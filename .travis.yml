@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t celadin/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true celadin/react-test npm test
+
+after_success:
+  - docker build -t celadin/multi-client ./client
+  - docker build -t celadin/multi-nginx ./nginx
+  - docker build -t celadin/multi-server ./server
+  - docker build -t celadin/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push celadin/multi-client
+  - docker push celadin/multi-nginx
+  - docker push celadin/multi-server
+  - docker push celadin/multi-worker
